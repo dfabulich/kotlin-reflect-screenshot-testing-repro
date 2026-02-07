@@ -27,3 +27,12 @@ kotlin.jvm.KotlinReflectionNotSupportedError: Kotlin reflection implementation i
 ## Cause
 
 This is happening because the renderer runs in an isolated `layoutLib` classloader https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:preview/screenshot/screenshot-validation-junit-engine/src/main/java/com/android/tools/screenshot/renderer/Renderer.kt;l=59?q=renderer.kt which includes `compose-preview-renderer-0.0.1-alpha13.jar`; that jar bundles `kotlin/reflect/KClasses.class`, a stub that throws the exception.
+
+## Workaround
+
+Prepend the real `kotlin-reflect` JAR to the layoutlib classpath so it is loaded before the compose-preview-renderer stub. The `app/build.gradle.kts` in this repo includes an `afterEvaluate` block that:
+
+1. Resolves `org.jetbrains.kotlin:kotlin-reflect` (using the project’s Kotlin version).
+2. For `updateDebugScreenshotTest` and `validateDebugScreenshotTest`, prepends those JARs to the task’s layoutlib classpath via reflection.
+
+With this in place, `./gradlew --rerun-tasks updateDebugScreenshotTest` and `./gradlew validateDebugScreenshotTest` succeed. If you add screenshot tests for other variants (e.g. release), add corresponding `tasks.findByName("updateReleaseScreenshotTest")?.let { ... }` (and validate) in the same block.

@@ -59,3 +59,27 @@ dependencies {
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }
+
+// Workaround for https://issuetracker.google.com/issues/482433854
+// compose-preview-renderer bundles stub kotlin/reflect classes that throw
+// KotlinReflectionNotSupportedError. Prepend the real kotlin-reflect to the
+// layoutlib classpath so it is loaded first in the isolated renderer classloader.
+afterEvaluate {
+    val kotlinReflectConfig = configurations.detachedConfiguration(
+        dependencies.create("org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin.get()}")
+    )
+    kotlinReflectConfig.resolve()
+    val kotlinReflectJars = kotlinReflectConfig.files
+
+    fun prependKotlinReflectToLayoutlib(task: Task) {
+        val getTestEngineInput = (task as java.lang.Object).javaClass.getMethod("getTestEngineInput")
+        val input = getTestEngineInput.invoke(task)!!
+        val layoutlibClassPath = input.javaClass.getMethod("getLayoutlibClassPath").invoke(input)!!
+        val existingFiles = layoutlibClassPath.javaClass.getMethod("getFiles").invoke(layoutlibClassPath) as Iterable<*>
+        val newFiles = kotlinReflectJars + existingFiles.filterIsInstance<java.io.File>()
+        // setFrom(Iterable) - pass as Iterable for Gradle's ConfigurableFileCollection
+        layoutlibClassPath.javaClass.getMethod("setFrom", Iterable::class.java).invoke(layoutlibClassPath, newFiles)
+    }
+    tasks.findByName("updateDebugScreenshotTest")?.let { prependKotlinReflectToLayoutlib(it) }
+    tasks.findByName("validateDebugScreenshotTest")?.let { prependKotlinReflectToLayoutlib(it) }
+}
