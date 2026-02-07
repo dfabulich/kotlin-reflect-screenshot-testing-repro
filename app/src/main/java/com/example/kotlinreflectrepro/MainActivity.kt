@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.kotlinreflectrepro.ui.theme.KotlinReflectReproTheme
+import kotlin.reflect.full.functions
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,8 +33,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
+    val firstMethodName = MainActivity::class.functions.firstOrNull()?.name ?: "?"
     Text(
-        text = "Hello $name!",
+        text = "Hello $name! First method: $firstMethodName",
         modifier = modifier
     )
 }
