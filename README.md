@@ -27,3 +27,7 @@ kotlin.jvm.KotlinReflectionNotSupportedError: Kotlin reflection implementation i
 ## Cause
 
 This is happening because the renderer runs in an isolated `layoutLib` classloader https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:preview/screenshot/screenshot-validation-junit-engine/src/main/java/com/android/tools/screenshot/renderer/Renderer.kt;l=59?q=renderer.kt which includes `compose-preview-renderer-0.0.1-alpha13.jar`; that jar bundles `kotlin/reflect/KClasses.class`, a stub that throws the exception.
+
+## Workaround available
+
+A workaround is available in the [workaround branch](https://github.com/dfabulich/kotlin-reflect-screenshot-testing-repro/tree/workaround)
